@@ -1,0 +1,31 @@
+services:
+  baserow:
+    container_name: baserow
+    networks:
+      - tools
+    ports:
+      - 8881:80
+    depends_on:
+      postgres:
+        condition: service_healthy
+    labels:
+      - io.containers.autoupdate=registry
+      - traefik.enable=true
+      - traefik.http.routers.baserow.rule=Host(`baserow.africanlocalnetwork.com`) 
+      - traefik.http.routers.baserow.entrypoints=websecure
+      - traefik.http.routers.baserow.tls=true
+    environment:
+      - PUID=1000
+      - PGID=1000
+      - BASEROW_PUBLIC_URL=https://baserow.africanlocalnetwork.com
+      - BASEROW_EXTRA_ALLOWED_HOSTS=192.168.3.100,baserow
+      - BASEROW_ENABLE_OTEL=true
+      - DATABASE_HOST=postgres
+      - DATABASE_PORT=5432
+      - DATABASE_NAME=baserow
+      - DATABASE_USER=baserow_user
+      - DATABASE_PASSWORD=baserowpass
+    volumes:
+      - ./baserow/data:/baserow/data
+    image: baserow/baserow:latest
+    restart: unless-stopped
