@@ -14,9 +14,10 @@ DB_NAME = "company_db"
 TABLE_NAME = "employees"
 CSV_FILE = "employees.csv"
 
-def create_database_and_table():
+def setup_database():
     """
-    Connects to PostgreSQL, creates a new database and a table for employee data.
+    Connects to PostgreSQL, creates a new database, enables the pgvector extension,
+    and creates a table for employee data.
     """
     conn = None
     try:
@@ -52,6 +53,12 @@ def create_database_and_table():
         )
         cursor = conn.cursor()
 
+        # Enable the pgvector extension
+        print("Enabling pgvector extension...")
+        cursor.execute("CREATE EXTENSION IF NOT EXISTS vector;")
+        conn.commit()
+        print("pgvector extension enabled.")
+
         # Create the employees table
         print(f"Creating table: {TABLE_NAME}")
         cursor.execute(f"""
@@ -66,7 +73,7 @@ def create_database_and_table():
         print("Table created successfully.")
 
     except psycopg2.Error as e:
-        print(f"Error creating database or table: {e}")
+        print(f"Error setting up database: {e}")
     finally:
         if conn:
             cursor.close()
@@ -92,7 +99,7 @@ def ingest_data_from_csv():
             next(reader)  # Skip the header row
             for row in reader:
                 cursor.execute(
-                    f"INSERT INTO {TABLE_NAME} (id, name, position, salary) VALUES (%s, %s, %s, %s)",
+                    f"INSERT INTO {TABLE_NAME} (id, name, position, salary) VALUES (%s, %s, %s, %s) ON CONFLICT (id) DO NOTHING",
                     row
                 )
         conn.commit()
@@ -145,6 +152,6 @@ def validate_data():
             conn.close()
 
 if __name__ == "__main__":
-    create_database_and_table()
+    setup_database()
     ingest_data_from_csv()
     validate_data()
